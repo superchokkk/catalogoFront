@@ -1,121 +1,271 @@
-import { useState, FormEvent } from 'react';
-import { supabase } from '../lib/supabase'; // Importando o cliente configurado
+import { useState, type FormEvent } from 'react';
+import type { User } from '../context/AuthContext';
 
-type AuthModalsProps = {
-  activeModal: 'login' | 'register' | 'recover' | null;
-  setActiveModal: (modal: 'login' | 'register' | 'recover' | null) => void;
+type AuthModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  /** Chamado depois de um login (ou cadastro) bem-sucedido, com o user retornado pelo backend */
+  onSuccess?: (user: User) => void;
 };
 
-export function AuthModals({ activeModal, setActiveModal }: AuthModalsProps) {
-  const [recoverStep, setRecoverStep] = useState<'email' | 'code'>('email');
-  
-  // Estados dos inputs
+type Tab = 'login' | 'cadastro';
+
+export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+  const [tab, setTab] = useState<Tab>('login');
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // Campos de login
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [nome, setNome] = useState('');
 
-  if (!activeModal) return null;
+  // Campos adicionais de cadastro
+  const [nome, setNome] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+
+  if (!isOpen) return null;
+
+  const limparEErrar = (mensagem: string) => {
+    setErro(mensagem);
+    setCarregando(false);
+  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    setErro(null);
+    setCarregando(true);
+
     try {
-      // Autenticação direta com o Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: senha,
+      const resposta = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        // Essencial: sem isso o navegador não guarda o cookie httpOnly que o backend manda de volta.
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
       });
-      
-      if (error) {
-        alert("E-mail ou senha inválidos.");
-        console.error("Erro do Supabase:", error.message);
-      } else {
-        alert("Login efetuado!");
-        // O Supabase já salvou o token de sessão de forma segura.
-        setActiveModal(null); 
+
+      const dados = await resposta.json().catch(() => null);
+
+      if (!resposta.ok || dados?.success === false) {
+        limparEErrar(dados?.message || 'Email ou senha inválidos.');
+        return;
       }
-    } catch (error) {
-      console.error("Erro inesperado no login", error);
+
+      if (!dados?.user) {
+        limparEErrar('Login realizado, mas o servidor não retornou os dados do usuário.');
+        return;
+      }
+
+      setCarregando(false);
+      onSuccess?.(dados.user);
+      onClose();
+    } catch {
+      limparEErrar('Não foi possível conectar ao servidor. Tente novamente.');
     }
   };
 
-  const handleRegister = async (e: FormEvent) => {
+  const handleCadastro = async (e: FormEvent) => {
     e.preventDefault();
+    setErro(null);
+
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem.');
+      return;
+    }
+
+    setCarregando(true);
+
     try {
-      // Registro direto com o Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: senha,
-        options: {
-          data: {
-            nome: nome, // Salva o nome extra nos metadados do usuário
-          }
-        }
+      // ATENÇÃO: ajuste o endpoint/campos abaixo conforme a rota real de cadastro do seu backend
+      const resposta = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha }),
       });
-      
-      if (error) {
-        alert("Falha ao registrar usuário.");
-        console.error("Erro do Supabase:", error.message);
-      } else {
-        alert("Cadastro efetuado! Agora faça o login.");
-        setActiveModal('login');
+
+      const dados = await resposta.json().catch(() => null);
+
+      if (!resposta.ok || dados?.success === false) {
+        limparEErrar(dados?.message || 'Não foi possível concluir o cadastro.');
+        return;
       }
-    } catch (error) {
-      console.error("Erro inesperado no cadastro", error);
+
+      if (dados?.user) {
+        // Backend já loga automaticamente no cadastro (cookie já veio junto).
+        setCarregando(false);
+        onSuccess?.(dados.user);
+        onClose();
+      } else {
+        // Caso contrário, leva o usuário para a aba de login para entrar com a conta criada.
+        setCarregando(false);
+        setTab('login');
+        setSenha('');
+        setConfirmarSenha('');
+      }
+    } catch {
+      limparEErrar('Não foi possível conectar ao servidor. Tente novamente.');
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-surface rounded-lg shadow-lg w-96 p-6">
-        
-        {activeModal === 'login' && (
-          <>
-            <h2 className="text-xl font-bold mb-4 text-text">Login</h2>
-            <form className="space-y-4" onSubmit={handleLogin}>
-              <div>
-                <label className="block text-sm font-medium text-text opacity-90">Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full rounded-md border border-gray-400 bg-background px-3 py-2 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text opacity-90">Senha</label>
-                <input type="password" required value={senha} onChange={e => setSenha(e.target.value)} className="mt-1 block w-full rounded-md border border-gray-400 bg-background px-3 py-2 outline-none" />
-              </div>
-              <div className="flex justify-between items-center pt-2">
-                <p className="text-sm text-text opacity-80">
-                  Não tem conta? <button type="button" onClick={() => setActiveModal('register')} className="text-primary hover:underline">Cadastre-se</button>
-                </p>
-                <div className="flex space-x-2">
-                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-gray-300 rounded-md">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover">Entrar</button>
-                </div>
-              </div>
-            </form>
-          </>
-        )}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm bg-surface text-text rounded-3xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Abas */}
+        <div className="flex border-b border-white/10">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('login');
+              setErro(null);
+            }}
+            className={`flex-1 py-4 text-center font-bold transition-colors ${
+              tab === 'login'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-text opacity-60 hover:opacity-100'
+            }`}
+          >
+            Entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('cadastro');
+              setErro(null);
+            }}
+            className={`flex-1 py-4 text-center font-bold transition-colors ${
+              tab === 'cadastro'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-text opacity-60 hover:opacity-100'
+            }`}
+          >
+            Cadastrar
+          </button>
+        </div>
 
-        {activeModal === 'register' && (
-          <>
-            <h2 className="text-xl font-bold mb-4 text-text">Criar Conta</h2>
-            <form className="space-y-4" onSubmit={handleRegister}>
-              <div>
-                <label className="block text-sm font-medium text-text opacity-90">Nome</label>
-                <input type="text" required value={nome} onChange={e => setNome(e.target.value)} className="mt-1 block w-full rounded-md border-gray-400 border bg-background px-3 py-2 outline-none" />
+        <div className="p-6">
+          {tab === 'login' ? (
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="login-email" className="text-sm opacity-80">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="voce@email.com"
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-text opacity-90">Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full rounded-md border-gray-400 border bg-background px-3 py-2 outline-none" />
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="login-senha" className="text-sm opacity-80">
+                  Senha
+                </label>
+                <input
+                  id="login-senha"
+                  type="password"
+                  required
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-text opacity-90">Senha</label>
-                <input type="password" required value={senha} onChange={e => setSenha(e.target.value)} className="mt-1 block w-full rounded-md border-gray-400 border bg-background px-3 py-2 outline-none" />
-              </div>
-              <div className="flex justify-end space-x-2 pt-2">
-                <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-gray-300 rounded-md">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover">Cadastrar</button>
-              </div>
+
+              {erro && <p className="text-sm text-red-500">{erro}</p>}
+
+              <button
+                type="submit"
+                disabled={carregando}
+                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-bold py-3 rounded-full transition-colors mt-2"
+              >
+                {carregando ? 'Entrando...' : 'Entrar'}
+              </button>
             </form>
-          </>
-        )}
+          ) : (
+            <form onSubmit={handleCadastro} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-nome" className="text-sm opacity-80">
+                  Nome
+                </label>
+                <input
+                  id="cad-nome"
+                  type="text"
+                  required
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="Seu nome"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-email" className="text-sm opacity-80">
+                  Email
+                </label>
+                <input
+                  id="cad-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="voce@email.com"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-senha" className="text-sm opacity-80">
+                  Senha
+                </label>
+                <input
+                  id="cad-senha"
+                  type="password"
+                  required
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-confirmar" className="text-sm opacity-80">
+                  Confirmar senha
+                </label>
+                <input
+                  id="cad-confirmar"
+                  type="password"
+                  required
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {erro && <p className="text-sm text-red-500">{erro}</p>}
+
+              <button
+                type="submit"
+                disabled={carregando}
+                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-bold py-3 rounded-full transition-colors mt-2"
+              >
+                {carregando ? 'Cadastrando...' : 'Criar conta'}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

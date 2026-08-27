@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import React, { useState } from 'react'; // Removido o FormEvent daqui
 
 type Props = {
   isOpen: boolean;
@@ -16,7 +16,8 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
   if (!isOpen) return null;
 
   // Função disparada ao clicar em "Adicionar"
-  const handleSubmit = async (e: FormEvent) => {
+  // CORREÇÃO: Utilizando React.FormEvent com o elemento HTMLFormElement
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {

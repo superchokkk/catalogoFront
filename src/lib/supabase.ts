@@ -9,4 +9,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('As variáveis do Supabase estão ausentes no arquivo .env.local');
 }
 
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder-key');
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -74,14 +74,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
 
     setCarregando(true);
+    
 
     try {
-      // ATENÇÃO: ajuste o endpoint/campos abaixo conforme a rota real de cadastro do seu backend
-      const resposta = await fetch('http://localhost:3000/api/auth/register', {
+      const resposta = await fetch('http://localhost:3000/api/auth/cadastro', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, senha }),
+        body: JSON.stringify({ nome, email, senha, confirmarSenha }),
       });
 
       const dados = await resposta.json().catch(() => null);

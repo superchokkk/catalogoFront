@@ -35,7 +35,7 @@ export function Catalog() {
 
   const deletarProduto = async (idProduto: string) => {
     try {
-      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/${idProduto}`, {
+      const resposta = await fetch(`local/api/produtos/${idProduto}`, {
         method: 'DELETE',
         credentials: 'include',
       });

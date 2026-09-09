@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import type { Product } from "../models/Product";
 import { theme } from "../theme"; 
 import { useAuth } from "../context/AuthContext"; // Importe o seu contexto de autenticação

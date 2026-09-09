@@ -74,11 +74,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
 
     setCarregando(true);
-    
+
     try {
       const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/usuarios/criar`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome, email, senha, confirmarSenha }),
       });
@@ -91,12 +90,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       }
 
       if (dados?.user) {
-        // Backend já loga automaticamente no cadastro (cookie já veio junto).
+        const respLog = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha }),
+        });
         setCarregando(false);
         onSuccess?.(dados.user);
         onClose();
       } else {
-        // Caso contrário, leva o usuário para a aba de login para entrar com a conta criada.
         setCarregando(false);
         setTab('login');
         setSenha('');
@@ -124,11 +126,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               setTab('login');
               setErro(null);
             }}
-            className={`flex-1 py-4 text-center font-bold transition-colors ${
-              tab === 'login'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-text opacity-60 hover:opacity-100'
-            }`}
+            className={`flex-1 py-4 text-center font-bold transition-colors ${tab === 'login'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-text opacity-60 hover:opacity-100'
+              }`}
           >
             Entrar
           </button>
@@ -138,11 +139,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               setTab('cadastro');
               setErro(null);
             }}
-            className={`flex-1 py-4 text-center font-bold transition-colors ${
-              tab === 'cadastro'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-text opacity-60 hover:opacity-100'
-            }`}
+            className={`flex-1 py-4 text-center font-bold transition-colors ${tab === 'cadastro'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-text opacity-60 hover:opacity-100'
+              }`}
           >
             Cadastrar
           </button>

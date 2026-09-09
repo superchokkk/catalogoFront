@@ -75,9 +75,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     setCarregando(true);
     
-
     try {
-      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/cadastro`, {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/usuarios/criar`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

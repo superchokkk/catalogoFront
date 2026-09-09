@@ -3,7 +3,7 @@ import { AddProductModal, DellProductModal, EditProductModal } from './AdminProd
 import { useAuth } from '../context/AuthContext';
 import type { Product } from '../models/Product';
 import { ComprarModal } from './ComprarModal';
-import { theme } from '../theme'; // <-- Importe o seu tema aqui
+import { theme } from '../theme';
 
 export function Catalog() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -21,7 +21,7 @@ export function Catalog() {
 
   const carregarProdutos = async () => {
     try {
-      const resposta = await fetch('http://localhost:3000/api/produtos/listagem');
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/listagem`);
       if (resposta.ok) {
         const dados = await resposta.json();
         setProdutos(Array.isArray(dados) ? dados : dados.produtos ?? []);
@@ -35,7 +35,7 @@ export function Catalog() {
 
   const deletarProduto = async (idProduto: string) => {
     try {
-      const resposta = await fetch(`http://localhost:3000/api/produtos/${idProduto}`, {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/${idProduto}`, {
         method: 'DELETE',
         credentials: 'include',
       });

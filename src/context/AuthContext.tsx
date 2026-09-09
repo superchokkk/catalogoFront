@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Como o token vive num cookie httpOnly, o JS não consegue ler nem decodificar.
     // A única forma de saber "quem está logado" após um F5 é perguntar ao backend.
     // ATENÇÃO: ajuste a URL abaixo se a rota "quem sou eu" tiver outro caminho no seu NestJS.
-    fetch('http://localhost:3000/api/auth/me', { credentials: 'include' })
+    fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((dados) => {
         if (dados?.user) setUser(dados.user);
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     // ATENÇÃO: ajuste a URL abaixo conforme a rota real de logout do seu backend.
-    fetch('http://localhost:3000/api/auth/logout', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     }).catch(() => {

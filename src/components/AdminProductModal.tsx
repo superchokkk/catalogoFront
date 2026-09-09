@@ -38,7 +38,7 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
     });
 
     try {
-      const resposta = await fetch('http://localhost:3000/api/produtos/criar', {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/criar`, {
         method: 'POST',
         // O navegador enviará o cookie HttpOnly automaticamente
         credentials: 'include', 
@@ -302,7 +302,7 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
     });
 
     try {
-      const resposta = await fetch(`http://localhost:3000/api/produtos/${produto.id}`, {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/${produto.id}`, {
         method: 'PUT',
         credentials: 'include', // Envia o Cookie HttpOnly automaticamente
         body: formData,

@@ -36,7 +36,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setCarregando(true);
 
     try {
-      const resposta = await fetch('http://localhost:3000/api/auth/login', {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         // Essencial: sem isso o navegador não guarda o cookie httpOnly que o backend manda de volta.
         credentials: 'include',
@@ -77,7 +77,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     
 
     try {
-      const resposta = await fetch('http://localhost:3000/api/auth/cadastro', {
+      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/cadastro`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

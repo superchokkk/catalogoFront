@@ -1,32 +1,58 @@
-# React + TypeScript + Vite
+# Catalogo Front
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Uma aplicação web frontend moderna para um catálogo de produtos. Este projeto foi construído utilizando React, Vite, TypeScript, Tailwind CSS e integra-se com o Supabase para serviços de backend, como autenticação de usuários.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologias Utilizadas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* **Framework:** [React](https://reactjs.org/) + [Vite](https://vitejs.dev/)
+* **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+* **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
+* **Backend/BaaS:** [Supabase](https://supabase.com/) (Autenticação e Banco de Dados)
+* **Linting:** Oxlint
 
-## React Compiler
+## 📁 Estrutura do Projeto
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+O código principal da aplicação está localizado no diretório `src`:
 
-## Expanding the Oxlint configuration
+* **`src/components/`**: Componentes de interface (UI) reutilizáveis, incluindo o catálogo principal (`Catalog`), cabeçalho (`Header`) e vários modais interativos (`AdminProductModal`, `AuthModals`, `ComprarModal`).
+* **`src/context/`**: Provedores de Contexto do React (Context API), como `AuthContext.tsx` para gerenciar o estado de autenticação do usuário em toda a aplicação.
+* **`src/lib/`**: Integrações e configurações de bibliotecas de terceiros (contém a configuração do cliente Supabase em `supabase.ts`).
+* **`src/models/`**: Interfaces TypeScript e modelos de dados (ex: `Product.ts`).
+* **`src/styles/` & `src/assets/`**: Folhas de estilo globais, arquivos de entrada do Tailwind e arquivos estáticos (como imagens e ícones).
+* **`src/legacy/`**: Contém arquivos HTML, JS e CSS legados de versões anteriores ou integrações externas.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## ⚙️ Pré-requisitos
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+* [Node.js](https://nodejs.org/) (versão 16 ou superior recomendada)
+* Um gerenciador de pacotes (npm, yarn ou pnpm)
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 🛠️ Instalação e Configuração
+
+1. **Navegue até o diretório do projeto:**
+   ```bash
+   cd catalogoFront
+   ```
+
+2. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure as Variáveis de Ambiente:**
+   Crie um arquivo `.env` na raiz do projeto para adicionar suas credenciais do Supabase:
+   ```env
+   VITE_SUPABASE_URL=sua_url_do_projeto_supabase
+   VITE_SUPABASE_ANON_KEY=sua_anon_key_do_supabase
+   ```
+
+4. **Execute o servidor de desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+   A aplicação normalmente estará disponível no endereço `http://localhost:5173`.
+
+## 📦 Scripts Disponíveis
+
+* `npm run dev`: Inicia o servidor de desenvolvimento do Vite.
+* `npm run build`: Compila o código TypeScript e constrói a aplicação otimizada para produção.
+* `npm run preview`: Inicia um servidor web local para visualizar a versão de produção gerada no build.

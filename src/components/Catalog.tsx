@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import type { Product } from '../models/Product';
 import { ComprarModal } from './ComprarModal';
 import { theme } from '../theme';
+import { apiFetch, mensagemDeErro } from '../lib/api';
 
 export function Catalog() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -21,10 +22,10 @@ export function Catalog() {
 
   const carregarProdutos = async () => {
     try {
-      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/listagem`);
+      const resposta = await apiFetch('/produtos/listagem', {}, true);
       if (resposta.ok) {
         const dados = await resposta.json();
-        setProdutos(Array.isArray(dados) ? dados : dados.produtos ?? []);
+        setProdutos(dados.produtos ?? []);
       }
     } catch (erro) {
       console.error("Erro ao buscar produtos da API:", erro);
@@ -35,19 +36,15 @@ export function Catalog() {
 
   const deletarProduto = async (idProduto: string) => {
     try {
-      const resposta = await fetch(`local/api/produtos/${idProduto}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const resposta = await apiFetch(`/produtos/${idProduto}`, { method: 'DELETE' });
 
-      if (resposta.ok) {
-        alert("Produto excluído!");
-        return true;
-      }
+      if (resposta.ok) return true;
+      alert(await mensagemDeErro(resposta, 'Não foi possível excluir o produto.'));
     } catch (erro) {
       console.error("Erro", erro);
-      return false;
+      alert('Não foi possível conectar ao servidor.');
     }
+    return false;
   }
 
   useEffect(() => {
@@ -252,8 +249,6 @@ export function Catalog() {
               setPaginaAtual(1);
             }
           }
-          carregarProdutos();
-          setPaginaAtual(1);
         }}
       />
       <EditProductModal

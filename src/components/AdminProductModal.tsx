@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { theme } from '../theme'; 
 import type { Product, Image } from '../models/Product';
+import { apiFetch, mensagemDeErro } from '../lib/api';
 
 type Props = {
   isOpen: boolean;
@@ -13,7 +14,6 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [preco, setPreco] = useState('');
-  const [quantidade, setQuantidade] = useState('');
   const [imagens, setImagens] = useState<File[]>([]);
 
   if (!isOpen) return null;
@@ -30,18 +30,15 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
     const formData = new FormData();
     formData.append('nome', nome);
     formData.append('descricao', descricao);
-    formData.append('preco', parseFloat(preco.replace(',', '.')).toString());
-    formData.append('quantidade', parseInt(quantidade, 10).toString());
+    formData.append('preco', preco.trim());
 
     imagens.forEach((file) => {
       formData.append('imagens', file);
     });
 
     try {
-      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/criar`, {
+      const resposta = await apiFetch('/produtos/criar', {
         method: 'POST',
-        // O navegador enviará o cookie HttpOnly automaticamente
-        credentials: 'include', 
         body: formData,
       });
 
@@ -49,16 +46,15 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
         setNome('');
         setDescricao('');
         setPreco('');
-        setQuantidade('');
         setImagens([]);
         onSuccess();
         onClose();
       } else {
-        const erroMsg = await resposta.text();
-        alert(`Erro ao adicionar produto: ${erroMsg}`);
+        alert(`Erro ao adicionar produto: ${await mensagemDeErro(resposta, 'tente novamente.')}`);
       }
     } catch (erro) {
       console.error("Falha de rede:", erro);
+      alert('Não foi possível conectar ao servidor.');
     }
   };
 
@@ -80,6 +76,7 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
             <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Nome</label>
             <input 
               type="text" 
+              maxLength={200} 
               required 
               value={nome} 
               onChange={(e) => setNome(e.target.value)} 
@@ -93,7 +90,7 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
             <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Descrição</label>
             <input 
               type="text" 
-              required 
+              maxLength={5000} 
               value={descricao} 
               onChange={(e) => setDescricao(e.target.value)} 
               className="block w-full rounded-md border px-3 py-2 outline-none focus:ring-1 bg-black/20"
@@ -102,35 +99,18 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: Props) {
             />
           </div>
           
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Preço</label>
-              <input 
-                type="text" 
-                required 
-                value={preco} 
-                onChange={(e) => setPreco(e.target.value)} 
-                inputMode="decimal" 
-                className="block w-full rounded-md border px-3 py-2 outline-none focus:ring-1 bg-black/20"
-                style={{ color: theme.cores.secundaria, borderColor: theme.cores.secundaria }}
-                placeholder="199.90" 
-              />
-            </div>
-            
-            <div className="w-1/2">
-              <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Quantidade</label>
-              <input 
-                type="number" 
-                required 
-                value={quantidade} 
-                onChange={(e) => setQuantidade(e.target.value)} 
-                step="1" 
-                min="0" 
-                className="block w-full rounded-md border px-3 py-2 outline-none focus:ring-1 bg-black/20"
-                style={{ color: theme.cores.secundaria, borderColor: theme.cores.secundaria }}
-                placeholder="Qtd" 
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Preço</label>
+            <input 
+              type="text" 
+              required 
+              value={preco} 
+              onChange={(e) => setPreco(e.target.value)} 
+              inputMode="decimal" 
+              className="block w-full rounded-md border px-3 py-2 outline-none focus:ring-1 bg-black/20"
+              style={{ color: theme.cores.secundaria, borderColor: theme.cores.secundaria }}
+              placeholder="1.299,90" 
+            />
           </div>
 
           <div>
@@ -239,8 +219,6 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
   const [descricao, setDescricao] = useState('');
   const [preco, setPreco] = useState('');
   const [precoAntigo, setPrecoAntigo] = useState('');
-  const [quantidade, setQuantidade] = useState('');
-  const [status, setStatus] = useState(true);
   const [promocao, setPromocao] = useState(false);
   
   // Imagens
@@ -254,8 +232,6 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
       setDescricao(produto.descricao);
       setPreco(produto.preco.toString());
       setPrecoAntigo(produto.preco_antigo ? produto.preco_antigo.toString() : '');
-      setQuantidade(produto.quantidade.toString());
-      setStatus(produto.status);
       setPromocao(produto.promocao);
       setImagensAtuais(produto.produto_imagens || []);
       setNovasImagens([]);
@@ -284,17 +260,15 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
     const formData = new FormData();
     formData.append('nome', nome);
     formData.append('descricao', descricao);
-    formData.append('preco', parseFloat(preco.replace(',', '.')).toString());
-    formData.append('quantidade', parseInt(quantidade, 10).toString());
-    formData.append('status', status.toString());
+    formData.append('preco', preco.trim());
     formData.append('promocao', promocao.toString());
     
-    if (precoAntigo) {
-      formData.append('preco_antigo', parseFloat(precoAntigo.replace(',', '.')).toString());
+    if (precoAntigo.trim()) {
+      formData.append('preco_antigo', precoAntigo.trim());
     }
 
-    // O backend espera as imagens que DEVEM SER MANTIDAS em formato JSON
-    formData.append('imagensExistentes', JSON.stringify(imagensAtuais));
+    // JSON (texto) com as URLs das imagens a manter; as demais são apagadas pelo backend
+    formData.append('imagensExistentes', JSON.stringify(imagensAtuais.map((img) => img.url_publica)));
 
     // Anexa as novas imagens selecionadas
     novasImagens.forEach((file) => {
@@ -302,9 +276,8 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
     });
 
     try {
-      const resposta = await fetch(`${import.meta.env.VITE_API_URL}/api/produtos/${produto.id}`, {
+      const resposta = await apiFetch(`/produtos/${produto.id}`, {
         method: 'PUT',
-        credentials: 'include', // Envia o Cookie HttpOnly automaticamente
         body: formData,
       });
 
@@ -312,11 +285,11 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
         onSuccess();
         onClose();
       } else {
-        const erroMsg = await resposta.text();
-        alert(`Erro ao atualizar produto: ${erroMsg}`);
+        alert(`Erro ao atualizar produto: ${await mensagemDeErro(resposta, 'tente novamente.')}`);
       }
     } catch (erro) {
       console.error("Falha de rede:", erro);
+      alert('Não foi possível conectar ao servidor.');
     }
   };
 
@@ -356,8 +329,8 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
             </div>
           </div>
           
-          {/* Preços e Quantidade */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Preços */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Preço (Atual)</label>
               <input 
@@ -375,26 +348,10 @@ export function EditProductModal({ isOpen, onClose, onSuccess, produto }: Props)
                 placeholder="Opcional"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: theme.cores.secundaria }}>Quantidade</label>
-              <input 
-                type="number" required value={quantidade} onChange={(e) => setQuantidade(e.target.value)} min="0" 
-                className="block w-full rounded-md border px-3 py-2 outline-none focus:ring-1 bg-black/20"
-                style={{ color: theme.cores.secundaria, borderColor: theme.cores.secundaria }}
-              />
-            </div>
           </div>
 
-          {/* Toggles (Status e Promoção) */}
+          {/* Toggle de Promoção */}
           <div className="flex gap-6 py-2 border-y border-gray-700">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" checked={status} onChange={(e) => setStatus(e.target.checked)} 
-                className="w-5 h-5 accent-blue-600 rounded"
-              />
-              <span style={{ color: theme.cores.secundaria }}>Produto Ativo</span>
-            </label>
-
             <label className="flex items-center gap-2 cursor-pointer">
               <input 
                 type="checkbox" checked={promocao} onChange={(e) => setPromocao(e.target.checked)} 

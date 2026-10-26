@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { Catalog } from './components/Catalog';
+import UpdatePassword from './pages/updatePass';
 import { AuthModal } from './components/AuthModals';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function AppContent() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -39,7 +41,12 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

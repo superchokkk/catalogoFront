@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { apiFetch, registrarSessaoExpirada } from '../lib/api';
 
 export type User = {
   id: string;
@@ -25,18 +26,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [carregandoSessao, setCarregandoSessao] = useState(true);
 
   useEffect(() => {
-    // Como o token vive num cookie httpOnly, o JS não consegue ler nem decodificar.
-    // A única forma de saber "quem está logado" após um F5 é perguntar ao backend.
-    // ATENÇÃO: ajuste a URL abaixo se a rota "quem sou eu" tiver outro caminho no seu NestJS.
-    fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, { credentials: 'include' })
+    // O token vive em cookie httpOnly; após um F5 só o backend sabe quem está logado.
+    // GET /auth/me devolve o próprio objeto do usuário (sem o envelope success/message).
+    apiFetch('/auth/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((dados) => {
-        if (dados?.user) setUser(dados.user);
+        if (dados?.id) {
+          setUser({ id: dados.id, nome: dados.nome, email: dados.email, nivel: dados.nivel });
+        }
       })
       .catch(() => {
-        // Sem sessão ativa (ou rota ainda não existe) — segue como deslogado, sem quebrar o app.
+        // Sem sessão ativa — segue como deslogado.
       })
       .finally(() => setCarregandoSessao(false));
+
+    // Se o refresh falhar numa rota autenticada, a sessão acabou.
+    registrarSessaoExpirada(() => setUser(null));
+    return () => registrarSessaoExpirada(null);
   }, []);
 
   const isAdmin = user?.nivel === 0 || user?.nivel === 1;
@@ -44,11 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (novoUser: User) => setUser(novoUser);
 
   const logout = () => {
-    // ATENÇÃO: ajuste a URL abaixo conforme a rota real de logout do seu backend.
-    fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    }).catch(() => {
+    apiFetch('/auth/logout', { method: 'POST' }, true).catch(() => {
       // Mesmo se a chamada falhar, ainda limpamos o estado local abaixo.
     });
     setUser(null);

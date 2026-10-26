@@ -9,7 +9,6 @@ export type Product = {
   nome: string;
   preco: number;
   preco_antigo: number | null;
-  quantidade: number;
   status: boolean;
   created_at: string;
   created_by: string;

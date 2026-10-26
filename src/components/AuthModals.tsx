@@ -9,7 +9,7 @@ type AuthModalProps = {
 };
 
 // Adicionamos os estados das novas telas do fluxo de senha
-type Tab = 'login' | 'esqueci-email' | 'esqueci-codigo';
+type Tab = 'login' | 'cadastro' | 'esqueci-email' | 'esqueci-codigo';
 
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [tab, setTab] = useState<Tab>('login');
@@ -17,7 +17,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
 
-  // Campos de login
+  // Campos de login / cadastro
+  const [nome, setNome] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
@@ -57,6 +59,52 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       setCarregando(false);
       onSuccess?.(dados.user);
       onClose();
+    } catch {
+      limparEErrar('Não foi possível conectar ao servidor. Tente novamente.');
+    }
+  };
+
+  const handleCadastro = async (e: FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+
+    if (senha.length < 8 || senha.length > 72) {
+      setErro('A senha deve ter entre 8 e 72 caracteres.');
+      return;
+    }
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem.');
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const resposta = await apiFetch(
+        '/usuarios/criar',
+        jsonBody({ nome: nome.trim(), email, senha, confirmarSenha }),
+        true,
+      );
+
+      if (!resposta.ok) {
+        limparEErrar(await mensagemDeErro(resposta, 'Não foi possível concluir o cadastro.'));
+        return;
+      }
+
+      // O cadastro não faz login: entramos em seguida para obter a sessão (e o nível) do usuário.
+      const login = await apiFetch('/auth/login', jsonBody({ email, senha }), true);
+      const dados = login.ok ? await login.json().catch(() => null) : null;
+
+      setCarregando(false);
+      if (dados?.user) {
+        onSuccess?.(dados.user);
+        onClose();
+      } else {
+        setTab('login');
+        setSenha('');
+        setConfirmarSenha('');
+        setSucessoMsg('Conta criada! Faça login para continuar.');
+      }
     } catch {
       limparEErrar('Não foi possível conectar ao servidor. Tente novamente.');
     }
@@ -134,8 +182,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         className="w-full max-w-sm bg-surface text-text rounded-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Aba de login */}
-        {tab === 'login' && (
+        {/* Abas principais (só aparecem em Login ou Cadastro) */}
+        {(tab === 'login' || tab === 'cadastro') && (
           <div className="flex border-b border-white/10">
             <button
               type="button"
@@ -149,6 +197,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 }`}
             >
               Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTab('cadastro');
+                setErro(null);
+                setSucessoMsg(null);
+              }}
+              className={`flex-1 py-4 text-center font-bold transition-colors ${tab === 'cadastro'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-text opacity-60 hover:opacity-100'
+                }`}
+            >
+              Cadastrar
             </button>
           </div>
         )}
@@ -202,6 +264,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               </div>
 
               {erro && <p className="text-sm text-red-500">{erro}</p>}
+              {sucessoMsg && <p className="text-sm text-green-400">{sucessoMsg}</p>}
 
               <button
                 type="submit"
@@ -221,6 +284,86 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 className="w-full bg-transparent text-primary hover:underline font-medium py-1 rounded-full transition-colors"
               >
                 Esqueci minha senha
+              </button>
+            </form>
+          )}
+
+          {tab === 'cadastro' && (
+            <form onSubmit={handleCadastro} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-nome" className="text-sm opacity-80">
+                  Nome
+                </label>
+                <input
+                  id="cad-nome"
+                  type="text"
+                  required
+                  maxLength={100}
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="Seu nome"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-email" className="text-sm opacity-80">
+                  Email
+                </label>
+                <input
+                  id="cad-email"
+                  type="email"
+                  required
+                  maxLength={100}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="voce@email.com"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-senha" className="text-sm opacity-80">
+                  Senha (mín. 8 caracteres)
+                </label>
+                <input
+                  id="cad-senha"
+                  type="password"
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="cad-confirmar" className="text-sm opacity-80">
+                  Confirmar senha
+                </label>
+                <input
+                  id="cad-confirmar"
+                  type="password"
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-text outline-none focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {erro && <p className="text-sm text-red-500">{erro}</p>}
+
+              <button
+                type="submit"
+                disabled={carregando}
+                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-bold py-3 rounded-full transition-colors mt-2"
+              >
+                {carregando ? 'Cadastrando...' : 'Criar conta'}
               </button>
             </form>
           )}

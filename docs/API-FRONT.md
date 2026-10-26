@@ -20,6 +20,9 @@ Ao receber **401** numa rota autenticada: chame `POST /auth/refresh` (sem corpo)
 ### Saber quem está logado
 `GET /auth/me` devolve o objeto do usuário direto (sem `success`/`message`), incluindo `nivel` e `nome`. Use ao carregar o app.
 
+### Cadastro
+`POST /usuarios/criar` `{nome, email, senha (8–72), confirmarSenha}` é público e **não faz login**: após criar, o front deve chamar `POST /auth/login`. O usuário nasce com o nível padrão (não admin). Resposta: `{success, message, user: {id, nome, email}}`. Se o e-mail já existir ou o cadastro falhar, a resposta é um 400 genérico (não revela se o e-mail está em uso).
+
 ### Recuperação de senha
 1. `POST /auth/esqueci-senha` `{email}` — resposta sempre genérica (não revela se o e-mail existe).
 2. Usuário recebe e-mail com código (OTP) ou link:
@@ -67,6 +70,7 @@ Erro:
 | `POST /auth/esqueci-senha` | público | limite 3/min por IP e 3/15 min por e-mail |
 | `POST /auth/redefinir-senha` | público | — |
 | `POST /auth/set-session` | público | — |
+| `POST /usuarios/criar` | público | ver "Cadastro"; limite 5/min por IP e 5/15 min por e-mail |
 | `GET /produtos/listagem` | público | só produtos ativos, mais novos primeiro; cada produto traz `produto_imagens[{id, url_path, url_publica}]` — exiba `url_publica` |
 | `POST /produtos/criar` | nível 0/1 | **multipart/form-data** |
 | `PUT /produtos/:id` | nível 0/1 | **multipart/form-data**; `:id` é UUID |
@@ -84,8 +88,5 @@ Detalhes dos campos de cada rota: ver `openapi.json`. O back **rejeita campos de
 - Rate limit padrão: 100 req/min por IP; respostas **429** devem ser tratadas.
 - Corpo JSON máximo: 100 kb.
 
-## 6. Ainda não disponível
-- `POST /usuarios/criar` existe no código, mas **não é servida** hoje (não está registrada em módulo). Não construa tela de cadastro dependente dela por enquanto.
-
-## 7. Manutenção do contrato (para o time do back)
+## 6. Manutenção do contrato (para o time do back)
 Ao mudar rotas/DTOs: regenerar `docs/openapi.json` (subir o back e baixar `/docs-json`) e avisar o front.

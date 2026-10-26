@@ -36,5 +36,5 @@ O contrato vive em `docs/openapi.json` (prevalece em caso de divergência) e `do
 - Todas as chamadas passam por `apiFetch` (`src/lib/api.ts`): envia cookies, em 401 chama `POST /auth/refresh` e repete a requisição uma vez; `mensagemDeErro` extrai `message` (string ou array). Não defina `Content-Type` ao enviar `FormData`.
 - `GET /auth/me` devolve o objeto do usuário direto (sem `success`/`user`); `GET /produtos/listagem` devolve `{ produtos, podeAtualizarUI }`.
 - Criar/editar produto é `multipart/form-data` e o backend rejeita campos desconhecidos (400): só `nome`, `descricao`, `preco`, `preco_antigo`, `promocao`, `imagensExistentes` (JSON com as `url_publica` a manter) e `imagens`. Não existem `quantidade` nem `status`.
-- `POST /usuarios/criar` não é servido, então não há cadastro de usuário no front.
+- Cadastro (`POST /usuarios/criar`, aba "Cadastrar" em `AuthModals.tsx`) não faz login: o front chama `/auth/login` em seguida. O usuário nasce com nível padrão (não admin).
 - Redefinição de senha: código OTP via `/auth/redefinir-senha`; por link, `/update-password` só chama `/auth/set-session` (a API não tem endpoint para definir a nova senha após isso).

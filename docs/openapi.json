@@ -672,6 +672,59 @@
           "Produtos"
         ]
       }
+    },
+    "/api/usuarios/criar": {
+      "post": {
+        "description": "Cadastro público: o usuário nasce com o nível de acesso padrão da tabela public.users. Limite: 5/min por IP e 5/15 min por e-mail.",
+        "operationId": "UserController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado. Além de `success`/`message`, traz `user: { id, nome, email }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaSucessoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos (corpo, parâmetro ou arquivo). `message` pode ser uma lista, uma entrada por campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErroDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (rate limiting).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Criar usuário",
+        "tags": [
+          "Usuários"
+        ]
+      }
     }
   },
   "info": {
@@ -883,6 +936,36 @@
         "required": [
           "nome",
           "preco"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Maria",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "example": "usuario@exemplo.com",
+            "maxLength": 100
+          },
+          "senha": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 72
+          },
+          "confirmarSenha": {
+            "type": "string",
+            "description": "Deve ser igual a `senha`."
+          }
+        },
+        "required": [
+          "nome",
+          "email",
+          "senha",
+          "confirmarSenha"
         ]
       }
     }
